@@ -1,43 +1,44 @@
 r"""Parameterizable transformations."""
 
 __all__ = [
-    "ComposedTransform",
-    "DependentTransform",
-    "IdentityTransform",
-    "CosTransform",
-    "SinTransform",
-    "SoftclipTransform",
-    "CircularShiftTransform",
-    "SignedPowerTransform",
-    "MonotonicAffineTransform",
-    "MonotonicRQSTransform",
-    "MonotonicTransform",
-    "BernsteinTransform",
-    "GaussianizationTransform",
-    "UnconstrainedMonotonicTransform",
-    "SOSPolynomialTransform",
-    "AutoregressiveTransform",
-    "CouplingTransform",
-    "FreeFormJacobianTransform",
-    "PermutationTransform",
-    "RotationTransform",
-    "LULinearTransform",
+    'ComposedTransform',
+    'DependentTransform',
+    'IdentityTransform',
+    'CosTransform',
+    'SinTransform',
+    'SoftclipTransform',
+    'CircularShiftTransform',
+    'SignedPowerTransform',
+    'MonotonicAffineTransform',
+    'MonotonicRQSTransform',
+    'MonotonicTransform',
+    'BernsteinTransform',
+    'GaussianizationTransform',
+    'UnconstrainedMonotonicTransform',
+    'SOSPolynomialTransform',
+    'AutoregressiveTransform',
+    'CouplingTransform',
+    'FreeFormJacobianTransform',
+    'PermutationTransform',
+    'RotationTransform',
+    'LULinearTransform',
 ]
 
 import math
-from textwrap import indent
-from typing import Any, Callable, Iterable, Tuple, Union
-
 import torch
 import torch.nn.functional as F
+
+from textwrap import indent
 from torch import BoolTensor, LongTensor, Size, Tensor
 from torch.distributions import constraints
-from torch.distributions.transforms import Transform
+from torch.distributions.transforms import *
 from torch.distributions.utils import _sum_rightmost
+from typing import *
 
+# isort: local
 from .utils import bisection, broadcast, gauss_legendre, odeint
 
-torch.distributions.transforms._InverseTransform.__name__ = "Inverse"
+torch.distributions.transforms._InverseTransform.__name__ = 'Inverse'
 
 
 def _call_and_ladj(self, x: Tensor) -> Tuple[Tensor, Tensor]:
@@ -81,10 +82,10 @@ class ComposedTransform(Transform):
         self.transforms = transforms
 
     def __repr__(self) -> str:
-        lines = [f"({i}): {t}" for i, t in enumerate(self.transforms)]
-        lines = indent("\n".join(lines), "  ")
+        lines = [f'({i}): {t}' for i, t in enumerate(self.transforms)]
+        lines = indent('\n'.join(lines), '  ')
 
-        return f"{self.__class__.__name__}(\n" + lines + "\n)"
+        return f'{self.__class__.__name__}(\n' + lines + '\n)'
 
     @property
     def domain(self) -> constraints.Constraint:
@@ -174,7 +175,7 @@ class DependentTransform(Transform):
         self.reinterpreted = reinterpreted
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.base}, {self.reinterpreted})"
+        return f'{self.__class__.__name__}({self.base}, {self.reinterpreted})'
 
     @property
     def domain(self) -> constraints.Constraint:
@@ -301,7 +302,7 @@ class SoftclipTransform(Transform):
         self.codomain = constraints.interval(-bound, bound)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(bound={self.bound})"
+        return f'{self.__class__.__name__}(bound={self.bound})'
 
     def _call(self, x: Tensor) -> Tensor:
         return x / (1 + abs(x / self.bound))
@@ -336,7 +337,7 @@ class CircularShiftTransform(Transform):
         self.codomain = constraints.interval(-bound, bound)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(bound={self.bound})"
+        return f'{self.__class__.__name__}(bound={self.bound})'
 
     def _call(self, x: Tensor) -> Tensor:
         return torch.remainder(x, 2 * self.bound) - self.bound
@@ -456,7 +457,7 @@ class MonotonicRQSTransform(Transform):
         self.derivatives = torch.exp(derivatives)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(bins={self.bins})"
+        return f'{self.__class__.__name__}(bins={self.bins})'
 
     @property
     def bins(self) -> int:
@@ -496,10 +497,7 @@ class MonotonicRQSTransform(Transform):
         mask, x0, x1, y0, y1, d0, d1, s = self.bin(k)
 
         z = mask * (x - x0) / (x1 - x0)
-
-        y = y0 + (y1 - y0) * (s * z**2 + d0 * z * (1 - z)) / (
-            s + (d0 + d1 - 2 * s) * z * (1 - z)
-        )
+        y = y0 + (y1 - y0) * (s * z**2 + d0 * z * (1 - z)) / (s + (d0 + d1 - 2 * s) * z * (1 - z))
 
         return torch.where(mask, y, x)
 
@@ -528,10 +526,7 @@ class MonotonicRQSTransform(Transform):
         mask, x0, x1, y0, y1, d0, d1, s = self.bin(k)
 
         z = mask * (x - x0) / (x1 - x0)
-
-        y = y0 + (y1 - y0) * (s * z**2 + d0 * z * (1 - z)) / (
-            s + (d0 + d1 - 2 * s) * z * (1 - z)
-        )
+        y = y0 + (y1 - y0) * (s * z**2 + d0 * z * (1 - z)) / (s + (d0 + d1 - 2 * s) * z * (1 - z))
 
         jacobian = (
             s**2
@@ -752,15 +747,12 @@ class UnconstrainedMonotonicTransform(MonotonicTransform):
         self.n = n
 
     def f(self, x: Tensor) -> Tensor:
-        return (
-            gauss_legendre(
-                f=self.g,
-                a=torch.zeros_like(x),
-                b=x,
-                n=self.n,
-                phi=self.phi,
-            )
-            + self.C
+        return self.C + gauss_legendre(
+            f=self.g,
+            a=torch.zeros_like(x),
+            b=x,
+            n=self.n,
+            phi=self.phi,
         )
 
     def log_abs_det_jacobian(self, x: Tensor, y: Tensor) -> Tensor:
@@ -988,8 +980,8 @@ class FreeFormJacobianTransform(Transform):
 
     def call_and_ladj(self, x: Tensor) -> Tuple[Tensor, Tensor]:
         if self.exact:
-            eye = torch.eye(x.shape[-1], dtype=x.dtype, device=x.device)
-            eye = eye.expand(*x.shape, -1).movedim(-1, 0)
+            I = torch.eye(x.shape[-1], dtype=x.dtype, device=x.device)
+            I = I.expand(*x.shape, -1).movedim(-1, 0)
         else:
             eps = torch.randn_like(x)
 
@@ -999,20 +991,18 @@ class FreeFormJacobianTransform(Transform):
                 dx = self.f(t, x)
 
             if self.exact:
-                jacobian = torch.autograd.grad(
-                    dx, x, eye, create_graph=True, is_grads_batched=True
-                )[0]
-                trace = torch.einsum("i...i", jacobian)
+                (jacobian,) = torch.autograd.grad(
+                    dx, x, I, create_graph=True, is_grads_batched=True
+                )
+                trace = torch.einsum('i...i', jacobian)
             else:
-                epsjp = torch.autograd.grad(dx, x, eps, create_graph=True)[0]
+                (epsjp,) = torch.autograd.grad(dx, x, eps, create_graph=True)
                 trace = (epsjp * eps).sum(dim=-1)
 
             return dx, trace * self.trace_scale
 
         ladj = torch.zeros_like(x[..., 0])
-        y, ladj = odeint(
-            f_aug, (x, ladj), self.t0, self.t1, self.phi, self.atol, self.rtol
-        )
+        y, ladj = odeint(f_aug, (x, ladj), self.t0, self.t1, self.phi, self.atol, self.rtol)
 
         return y, ladj * (1 / self.trace_scale)
 
@@ -1038,9 +1028,9 @@ class PermutationTransform(Transform):
 
         if len(order) > 10:
             order = order[:5] + [...] + order[-5:]
-            order = str(order).replace("Ellipsis", "...")
+            order = str(order).replace('Ellipsis', '...')
 
-        return f"{self.__class__.__name__}({order})"
+        return f'{self.__class__.__name__}({order})'
 
     def _call(self, x: Tensor) -> Tensor:
         return x[..., self.order]
@@ -1073,10 +1063,10 @@ class RotationTransform(Transform):
         self.R = torch.linalg.matrix_exp(A - A.mT)
 
     def _call(self, x: Tensor) -> Tensor:
-        return torch.einsum("...ij,...j->...i", self.R, x)
+        return torch.einsum('...ij,...j->...i', self.R, x)
 
     def _inverse(self, y: Tensor) -> Tensor:
-        return torch.einsum("...ij,...i->...j", self.R, y)
+        return torch.einsum('...ij,...i->...j', self.R, y)
 
     def log_abs_det_jacobian(self, x: Tensor, y: Tensor) -> Tensor:
         return torch.zeros_like(x[..., 0])
@@ -1097,13 +1087,13 @@ class LULinearTransform(Transform):
     def __init__(self, LU: Tensor, **kwargs):
         super().__init__(**kwargs)
 
-        eye = torch.eye(LU.shape[-1], dtype=LU.dtype, device=LU.device)
+        I = torch.eye(LU.shape[-1], dtype=LU.dtype, device=LU.device)
 
         self.L = torch.tril(LU)
-        self.U = torch.triu(LU, diagonal=1) + eye
+        self.U = torch.triu(LU, diagonal=1) + I
 
     def _call(self, x: Tensor) -> Tensor:
-        return torch.einsum("...ij,...j->...i", self.L @ self.U, x)
+        return torch.einsum('...ij,...j->...i', self.L @ self.U, x)
 
     def _inverse(self, y: Tensor) -> Tensor:
         return torch.linalg.solve_triangular(

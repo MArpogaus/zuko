@@ -3,20 +3,21 @@ r"""Core building blocks."""
 from __future__ import annotations
 
 __all__ = [
-    "LazyDistribution",
-    "LazyTransform",
-    "LazyComposedTransform",
-    "Flow",
-    "Unconditional",
+    'LazyDistribution',
+    'LazyTransform',
+    'LazyComposedTransform',
+    'Flow',
+    'Unconditional',
 ]
 
 import abc
-from typing import Any, Callable, Sequence, Union
-
 import torch.nn as nn
+
 from torch import Tensor
 from torch.distributions import Distribution, Transform
+from typing import *
 
+# isort: local
 from ..distributions import NormalizingFlow
 from ..transforms import ComposedTransform
 
@@ -41,6 +42,8 @@ class LazyDistribution(nn.Module, abc.ABC):
             A distribution :math:`p(X | c)`.
         """
 
+        pass
+
 
 class LazyTransform(nn.Module, abc.ABC):
     r"""Abstract lazy transformation.
@@ -61,6 +64,8 @@ class LazyTransform(nn.Module, abc.ABC):
         Returns:
             A transformation :math:`y = f(x | c)`.
         """
+
+        pass
 
     @property
     def inv(self) -> LazyTransform:
@@ -105,7 +110,7 @@ class LazyComposedTransform(LazyTransform):
         self.transforms = nn.ModuleList(transforms)
 
     def __repr__(self) -> str:
-        return repr(self.transforms).replace("ModuleList", "LazyComposedTransform", 1)
+        return repr(self.transforms).replace('ModuleList', 'LazyComposedTransform', 1)
 
     def forward(self, c: Any = None) -> Transform:
         r"""
@@ -204,15 +209,15 @@ class Unconditional(nn.Module):
 
         for i, arg in enumerate(args):
             if buffer:
-                self.register_buffer(f"_{i}", arg)
+                self.register_buffer(f'_{i}', arg)
             else:
-                self.register_parameter(f"_{i}", nn.Parameter(arg))
+                self.register_parameter(f'_{i}', nn.Parameter(arg))
 
         self.kwargs = kwargs
 
     def extra_repr(self) -> str:
         if isinstance(self.meta, nn.Module):
-            return ""
+            return ''
         else:
             return repr(self.forward())
 

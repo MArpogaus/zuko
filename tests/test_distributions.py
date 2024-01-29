@@ -1,8 +1,8 @@
 r"""Tests for the zuko.distributions module."""
 
 import torch
-from torch.distributions import ExpTransform, Gamma, Normal, Uniform
 
+from torch.distributions import ExpTransform, Gamma, Normal, Uniform
 from zuko.distributions import (
     BoxUniform,
     DiagNormal,

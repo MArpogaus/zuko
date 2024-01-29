@@ -3,8 +3,8 @@ r"""Tests for the zuko.nn module."""
 import pytest
 import torch
 import torch.nn as nn
-from torch import randn
 
+from torch import randn
 from zuko.nn import MLP, Linear, MaskedMLP, MonotonicMLP
 
 

@@ -1,20 +1,23 @@
 r"""Neural flows and transformations."""
 
 __all__ = [
-    "MNN",
-    "UMNN",
-    "NAF",
-    "UNAF",
+    'MNN',
+    'UMNN',
+    'NAF',
+    'UNAF',
 ]
-
-from functools import partial
-from typing import Any, Dict
 
 import torch
 import torch.nn as nn
+
+from functools import partial
 from torch import Tensor
 from torch.distributions import Transform
+from typing import *
 
+# isort: local
+from .autoregressive import MaskedAutoregressiveTransform
+from .core import Flow, Unconditional
 from ..distributions import DiagNormal
 from ..nn import MLP, MonotonicMLP
 from ..transforms import (
@@ -23,8 +26,6 @@ from ..transforms import (
     UnconstrainedMonotonicTransform,
 )
 from ..utils import broadcast
-from .autoregressive import MaskedAutoregressiveTransform
-from .core import Flow, Unconditional
 
 
 class MNN(nn.Module):
@@ -52,9 +53,10 @@ class MNN(nn.Module):
         self.network = MonotonicMLP(1 + signal, 1, **kwargs)
 
     def f(self, signal: Tensor, x: Tensor) -> Tensor:
-        return self.network(
-            torch.cat(broadcast(x[..., None], signal, ignore=1), dim=-1)
-        ).squeeze(dim=-1)
+        y = self.network(torch.cat(broadcast(x[..., None], signal, ignore=1), dim=-1))
+        y = y.squeeze(dim=-1)
+
+        return y
 
     def forward(self, signal: Tensor) -> Transform:
         return MonotonicTransform(
@@ -85,14 +87,13 @@ class UMNN(nn.Module):
     def __init__(self, signal: int = 16, **kwargs):
         super().__init__()
 
-        kwargs.setdefault("activation", nn.ELU)
+        kwargs.setdefault('activation', nn.ELU)
 
         self.integrand = MLP(1 + signal, 1, **kwargs)
 
     def g(self, signal: Tensor, x: Tensor) -> Tensor:
-        dx = self.integrand(
-            torch.cat(broadcast(x[..., None], signal, ignore=1), dim=-1)
-        ).squeeze(dim=-1)
+        dx = self.integrand(torch.cat(broadcast(x[..., None], signal, ignore=1), dim=-1))
+        dx = dx.squeeze(dim=-1)
 
         return torch.exp(dx / (1 + abs(dx / 9)))  # in [1e-4, 1e4]
 

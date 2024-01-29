@@ -2,32 +2,15 @@ r"""Tests for the zuko.transforms module."""
 
 import pytest
 import torch
-from torch import randn
 
-from zuko.transforms import (
-    BernsteinTransform,
-    CircularShiftTransform,
-    CosTransform,
-    FreeFormJacobianTransform,
-    GaussianizationTransform,
-    IdentityTransform,
-    LULinearTransform,
-    MonotonicAffineTransform,
-    MonotonicRQSTransform,
-    MonotonicTransform,
-    PermutationTransform,
-    RotationTransform,
-    SignedPowerTransform,
-    SinTransform,
-    SoftclipTransform,
-    SOSPolynomialTransform,
-    UnconstrainedMonotonicTransform,
-)
+from torch import randn
+from torch.distributions import *
+from zuko.transforms import *
 
 torch.set_default_dtype(torch.float64)
 
 
-@pytest.mark.parametrize("batched", [False, True])
+@pytest.mark.parametrize('batched', [False, True])
 def test_univariate_transforms(batched: bool):
     batch = (256,) if batched else ()
 
@@ -44,18 +27,14 @@ def test_univariate_transforms(batched: bool):
         BernsteinTransform(randn(*batch, 16)),
         BernsteinTransform(randn(*batch, 16), linear=True),
         GaussianizationTransform(randn(*batch, 8), randn(*batch, 8)),
-        UnconstrainedMonotonicTransform(
-            lambda x: torch.exp(-(x**2)) + 1e-2, randn(batch)
-        ),
+        UnconstrainedMonotonicTransform(lambda x: torch.exp(-(x**2)) + 1e-2, randn(batch)),
         SOSPolynomialTransform(randn(*batch, 3, 5), randn(batch)),
     ]
 
     for t in ts:
         # Call
-        if hasattr(t.domain, "lower_bound"):
-            x = torch.linspace(
-                t.domain.lower_bound + 1e-2, t.domain.upper_bound - 1e-2, 256
-            )
+        if hasattr(t.domain, 'lower_bound'):
+            x = torch.linspace(t.domain.lower_bound + 1e-2, t.domain.upper_bound - 1e-2, 256)
         else:
             x = torch.linspace(-5.0, 5.0, 256)
 
@@ -97,7 +76,7 @@ def test_univariate_transforms(batched: bool):
 
 def test_multivariate_transforms():
     A, B = torch.randn(5, 16), torch.randn(16, 5)
-    f = lambda t, x: torch.sigmoid(x @ A) @ B  # noqa: E731
+    f = lambda t, x: torch.sigmoid(x @ A) @ B
 
     ts = [
         FreeFormJacobianTransform(f, 0.0, 1.0, atol=1e-7, rtol=1e-6),

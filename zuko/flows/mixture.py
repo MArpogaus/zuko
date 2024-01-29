@@ -1,20 +1,22 @@
 r"""Mixture models."""
 
 __all__ = [
-    "GMM",
+    'GMM',
 ]
-
-from math import prod
 
 import torch
 import torch.nn as nn
+
+from math import prod
 from torch import Tensor
 from torch.distributions import Distribution, MultivariateNormal
+from typing import *
 
+# isort: local
+from .core import LazyDistribution
 from ..distributions import Mixture
 from ..nn import MLP
 from ..utils import unpack
-from .core import LazyDistribution
 
 
 class GMM(LazyDistribution):

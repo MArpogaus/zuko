@@ -2,16 +2,22 @@ r"""General purpose helpers."""
 
 from __future__ import annotations
 
-__all__ = ["bisection", "broadcast", "gauss_legendre", "odeint", "unpack"]
+__all__ = [
+    'bisection',
+    'broadcast',
+    'gauss_legendre',
+    'odeint',
+    'unpack',
+]
 
 import math
-from functools import lru_cache
-from typing import Callable, Iterable, List, Sequence, Tuple, Union
-
 import numpy as np
 import torch
+
+from functools import lru_cache
 from torch import Size, Tensor
 from torch.autograd.function import once_differentiable
+from typing import *
 
 
 def bisection(
@@ -95,9 +101,7 @@ class Bisection(torch.autograd.Function):
         grad_y = grad_x / jacobian
 
         if phi:
-            grad_phi = torch.autograd.grad(
-                y, phi, -grad_y, retain_graph=True, allow_unused=True
-            )
+            grad_phi = torch.autograd.grad(y, phi, -grad_y, retain_graph=True, allow_unused=True)
         else:
             grad_phi = ()
 
@@ -228,7 +232,7 @@ class GaussLegendre(torch.autograd.Function):
         nodes = (nodes + 1) / 2
         weights = weights / 2
 
-        kwargs.setdefault("dtype", torch.get_default_dtype())
+        kwargs.setdefault('dtype', torch.get_default_dtype())
 
         return (
             torch.as_tensor(nodes, **kwargs),
@@ -313,7 +317,7 @@ def odeint(
             return torch.cat([y.flatten() for y in x])
 
         x0 = pack(x)
-        g = lambda t, x: pack(f(t, *unpack(x, shapes)))  # noqa: E731
+        g = lambda t, x: pack(f(t, *unpack(x, shapes)))
 
     t0 = torch.as_tensor(t0, dtype=x0.dtype, device=x0.device)
     t1 = torch.as_tensor(t1, dtype=x0.dtype, device=x0.device)
@@ -328,6 +332,7 @@ def odeint(
         return unpack(x1, shapes)
 
 
+# fmt: off
 def dopri45(
     f: Callable[[Tensor, Tensor], Tensor],
     x: Tensor,
@@ -382,6 +387,7 @@ def dopri45(
     )
 
     return x_next, abs(x_next - x_star)
+# fmt: on
 
 
 class NestedTensor(tuple):

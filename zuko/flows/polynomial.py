@@ -1,16 +1,17 @@
 r"""Polynomial flows."""
 
 __all__ = [
-    "SOSPF",
-    "BPF",
+    'SOSPF',
+    'BPF',
 ]
 
-
 from functools import partial
+from typing import *
 
-from ..transforms import BernsteinTransform, SoftclipTransform, SOSPolynomialTransform
+# isort: local
 from .autoregressive import MAF
 from .core import Unconditional
+from ..transforms import BernsteinTransform, SoftclipTransform, SOSPolynomialTransform
 
 
 class SOSPF(MAF):

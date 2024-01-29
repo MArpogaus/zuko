@@ -1,28 +1,24 @@
 r"""Gaussianization flows."""
 
 __all__ = [
-    "ElementWiseTransform",
-    "GF",
+    'ElementWiseTransform',
+    'GF',
 ]
-
-from math import prod
-from typing import Callable, Sequence
 
 import torch
 import torch.nn as nn
+
+from math import prod
 from torch import Size, Tensor
 from torch.distributions import Transform
+from typing import *
 
+# isort: local
+from .core import Flow, LazyTransform, Unconditional
 from ..distributions import DiagNormal
 from ..nn import MLP
-from ..transforms import (
-    DependentTransform,
-    GaussianizationTransform,
-    MonotonicAffineTransform,
-    RotationTransform,
-)
+from ..transforms import *
 from ..utils import unpack
-from .core import Flow, LazyTransform, Unconditional
 
 
 class ElementWiseTransform(LazyTransform):
@@ -79,11 +75,9 @@ class ElementWiseTransform(LazyTransform):
     def extra_repr(self) -> str:
         base = self.univariate(*map(torch.randn, self.shapes))
 
-        return "\n".join(
-            [
-                f"(base): {base}",
-            ]
-        )
+        return '\n'.join([
+            f'(base): {base}',
+        ])
 
     def forward(self, c: Tensor = None) -> Transform:
         if c is None:

@@ -1,36 +1,29 @@
 r"""Parameterizable probability distributions."""
 
 __all__ = [
-    "NormalizingFlow",
-    "Joint",
-    "Mixture",
-    "GeneralizedNormal",
-    "DiagNormal",
-    "BoxUniform",
-    "TransformedUniform",
-    "Truncated",
-    "Sort",
-    "TopK",
-    "Minimum",
-    "Maximum",
+    'NormalizingFlow',
+    'Joint',
+    'Mixture',
+    'GeneralizedNormal',
+    'DiagNormal',
+    'BoxUniform',
+    'TransformedUniform',
+    'Truncated',
+    'Sort',
+    'TopK',
+    'Minimum',
+    'Maximum',
 ]
 
 import math
-from textwrap import indent
-from typing import Tuple
-
 import torch
+
+from textwrap import indent
 from torch import Size, Tensor
-from torch.distributions import (
-    Categorical,
-    Distribution,
-    Independent,
-    Normal,
-    Transform,
-    Uniform,
-    constraints,
-)
+from torch.distributions import *
+from torch.distributions import constraints
 from torch.distributions.utils import _sum_rightmost
+from typing import *
 
 Distribution._validate_args = False
 Distribution.arg_constraints = {}
@@ -87,12 +80,12 @@ class NormalizingFlow(Distribution):
 
     def __repr__(self) -> str:
         lines = [
-            f"(transform): {self.transform}",
-            f"(base): {self.base}",
+            f'(transform): {self.transform}',
+            f'(base): {self.base}',
         ]
-        lines = indent("\n".join(lines), "  ")
+        lines = indent('\n'.join(lines), '  ')
 
-        return self.__class__.__name__ + "(\n" + lines + "\n)"
+        return self.__class__.__name__ + '(\n' + lines + '\n)'
 
     @property
     def batch_shape(self) -> Size:
@@ -166,9 +159,9 @@ class Joint(Distribution):
 
     def __repr__(self) -> str:
         lines = map(repr, self.marginals)
-        lines = indent("\n".join(lines), "  ")
+        lines = indent('\n'.join(lines), '  ')
 
-        return self.__class__.__name__ + "(\n" + lines + "\n)"
+        return self.__class__.__name__ + '(\n' + lines + '\n)'
 
     @property
     def batch_shape(self) -> Size:
@@ -245,7 +238,7 @@ class Mixture(Distribution):
         self.logits = logits
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.base})"
+        return f'{self.__class__.__name__}({self.base})'
 
     @property
     def batch_shape(self) -> Size:
@@ -303,7 +296,7 @@ class GeneralizedNormal(Distribution):
         tensor(0.7480)
     """
 
-    arg_constraints = {"beta": constraints.positive}
+    arg_constraints = {'beta': constraints.positive}
     support = constraints.real
     has_rsample = True
 
@@ -325,9 +318,7 @@ class GeneralizedNormal(Distribution):
         return new
 
     def log_prob(self, x: Tensor) -> Tensor:
-        return (
-            torch.log(self.beta / 2) - torch.lgamma(1 / self.beta) - abs(x) ** self.beta
-        )
+        return torch.log(self.beta / 2) - torch.lgamma(1 / self.beta) - abs(x) ** self.beta
 
     def rsample(self, shape: Size = ()) -> Tensor:
         beta = self.beta.expand(shape + self.beta.shape)
@@ -358,7 +349,7 @@ class DiagNormal(Independent):
         super().__init__(Normal(torch.as_tensor(loc), torch.as_tensor(scale)), ndims)
 
     def __repr__(self) -> str:
-        return "Diag" + repr(self.base_dist)
+        return 'Diag' + repr(self.base_dist)
 
     def expand(self, batch_shape: Size, new: Distribution = None) -> Distribution:
         new = self._get_checked_instance(DiagNormal, new)
@@ -391,7 +382,7 @@ class BoxUniform(Independent):
         super().__init__(Uniform(torch.as_tensor(lower), torch.as_tensor(upper)), ndims)
 
     def __repr__(self) -> str:
-        return "Box" + repr(self.base_dist)
+        return 'Box' + repr(self.base_dist)
 
     def expand(self, batch_shape: Size, new: Distribution = None) -> Distribution:
         new = self._get_checked_instance(BoxUniform, new)
@@ -454,8 +445,8 @@ class Truncated(Distribution):
     def __init__(
         self,
         base: Distribution,
-        lower: Tensor = float("-inf"),
-        upper: Tensor = float("+inf"),
+        lower: Tensor = float('-inf'),
+        upper: Tensor = float('+inf'),
     ):
         super().__init__()
 
@@ -465,7 +456,7 @@ class Truncated(Distribution):
         self.uniform = Uniform(base.cdf(lower), base.cdf(upper))
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.base})"
+        return f'{self.__class__.__name__}({self.base})'
 
     @property
     def batch_shape(self) -> Size:
@@ -491,9 +482,9 @@ class Truncated(Distribution):
 
 
 class Sort(Distribution):
-    r"""Creates a distribution for a :math:`n`-d random variable :math:`X`, whose
-    elements :math:`X_i` are :math:`n` draws from a base distribution :math:`p(Z)`,
-    ordered such that :math:`X_i \leq X_{i + 1}`.
+    r"""Creates a distribution for a :math:`n`-d random variable :math:`X`, whose elements
+    :math:`X_i` are :math:`n` draws from a base distribution :math:`p(Z)`, ordered
+    such that :math:`X_i \leq X_{i + 1}`.
 
     .. math:: p(X = x) = \begin{cases}
             n! \, \prod_{i = 1}^n p(Z = x_i) & \text{if $x$ is ordered} \\
@@ -529,7 +520,7 @@ class Sort(Distribution):
         self.log_fact = math.log(math.factorial(n))
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.base}, {self.n})"
+        return f'{self.__class__.__name__}({self.base}, {self.n})'
 
     @property
     def batch_shape(self) -> Size:
@@ -570,9 +561,9 @@ class Sort(Distribution):
 
 
 class TopK(Sort):
-    r"""Creates a distribution for a :math:`k`-d random variable :math:`X`, whose
-    elements :math:`X_i` are the top :math:`k` among :math:`n` draws from a base
-    distribution :math:`p(Z)`, ordered such that :math:`X_i \leq X_{i + 1}`.
+    r"""Creates a distribution for a :math:`k`-d random variable :math:`X`, whose elements
+    :math:`X_i` are the top :math:`k` among :math:`n` draws from a base distribution
+    :math:`p(Z)`, ordered such that :math:`X_i \leq X_{i + 1}`.
 
     .. math:: p(X = x) = \begin{cases}
             \frac{n!}{(n - k)!} \, \prod_{i = 1}^k p(Z = x_i)
@@ -609,7 +600,7 @@ class TopK(Sort):
         self.log_fact = self.log_fact - math.log(math.factorial(n - k))
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.base}, {self.k}, {self.n})"
+        return f'{self.__class__.__name__}({self.base}, {self.k}, {self.n})'
 
     @property
     def event_shape(self) -> Size:

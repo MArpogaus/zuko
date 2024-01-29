@@ -1,19 +1,21 @@
 r"""Spline flows."""
 
 __all__ = [
-    "NSF",
-    "NCSF",
+    'NSF',
+    'NCSF',
 ]
 
-from math import pi
-
 import torch
-from torch.distributions import Transform
 
-from ..distributions import BoxUniform
-from ..transforms import CircularShiftTransform, MonotonicRQSTransform
+from math import pi
+from torch.distributions import Transform
+from typing import *
+
+# isort: local
 from .autoregressive import MAF
-from .core import ComposedTransform, Unconditional
+from .core import Unconditional
+from ..distributions import BoxUniform
+from ..transforms import *
 
 
 class NSF(MAF):
